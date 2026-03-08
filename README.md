@@ -3,31 +3,29 @@
 
 # ESPNOW Example
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+Ví dụ này minh họa cách sử dụng ESP-NOW qua WiFi. Ví dụ thực hiện các bước sau:
 
-This example shows how to use ESPNOW of wifi. Example does the following steps:
+Khởi động WiFi.
 
-* Start WiFi.
-* Initialize ESPNOW.
-* Register ESPNOW sending or receiving callback function.
-* Add ESPNOW peer information.
-* Send and receive ESPNOW data.
+Khởi tạo ESP-NOW.
 
-This example need at least two ESP devices:
+Đăng ký hàm callback cho việc gửi hoặc nhận dữ liệu ESP-NOW.
 
-* In order to get the MAC address of the other device, Device1 firstly send broadcast ESPNOW data with 'state' set as 0.
-* When Device2 receiving broadcast ESPNOW data from Device1 with 'state' as 0, adds Device1 into the peer list.
-  Then start sending broadcast ESPNOW data with 'state' set as 1.
-* When Device1 receiving broadcast ESPNOW data with 'state' as 1, compares the local magic number with that in the data.
-  If the local one is bigger than that one, stop sending broadcast ESPNOW data and starts sending unicast ESPNOW data to Device2.
-* If Device2 receives unicast ESPNOW data, also stop sending broadcast ESPNOW data.
+Thêm thông tin peer (thiết bị kết nối) của ESP-NOW.
 
-In practice, if the MAC address of the other device is known, it's not required to send/receive broadcast ESPNOW data first,
-just add the device into the peer list and send/receive unicast ESPNOW data.
+Gửi và nhận dữ liệu ESP-NOW.
 
-There are a lot of "extras" on top of ESPNOW data, such as type, state, sequence number, CRC and magic in this example. These "extras" are
-not required to use ESPNOW. They are only used to make this example to run correctly. However, it is recommended that users add some "extras"
-to make ESPNOW data more safe and more reliable.
+Ví dụ này cần ít nhất hai thiết bị ESP.
+
+*Để lấy địa chỉ MAC của thiết bị còn lại, Device1 trước tiên sẽ gửi dữ liệu ESP-NOW dạng broadcast với trường state được đặt bằng 0.
+
+*Khi Device2 nhận được dữ liệu broadcast ESP-NOW từ Device1 với state = 0, nó sẽ thêm Device1 vào danh sách peer.
+Sau đó Device2 bắt đầu gửi dữ liệu broadcast ESP-NOW với state được đặt bằng 1.
+
+*Khi Device1 nhận được dữ liệu broadcast ESP-NOW với state = 1, nó sẽ so sánh magic number của chính nó với magic number trong dữ liệu nhận được.
+Nếu magic number của Device1 lớn hơn, Device1 sẽ dừng gửi broadcast ESP-NOW và bắt đầu gửi dữ liệu unicast ESP-NOW trực tiếp tới Device2.
+
+*Nếu Device2 nhận được dữ liệu unicast ESP-NOW, nó cũng sẽ dừng gửi broadcast ESP-NOW.
 
 ## How to use example
 
