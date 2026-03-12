@@ -73,71 +73,95 @@ idf.py menuconfig
   When this parameter is enabled, the ESP32 device will send data at the PHY rate of 512Kbps or 256Kbps
   then the data can be transmitted over long range between two ESP32 devices.
 
-### Build and Flash
+# Drone Flight Control Architecture (ESP32 + FreeRTOS)
+```mermaid
+flowchart TD
+    %% Cảm biến
+    subgraph Sensors [Cảm biến]
+        IMU[MPU6050 / IMU]
+        ToF[VL53L1X / ToF]
+    end
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
+    %% Task chính
+    subgraph MainTasks [Task chính]
+        IMUTask[IMU Task - Đọc MPU6050]
+        ToFTask[ToF Task - Đọc VL53L1X]
+        AngleEstimatorTask[Angle Estimator Task - Ước lượng góc]
+        PIDTask[PID Controller Task - Điều khiển PID]
+        MotorTask[Motor Control Task - Điều khiển động cơ]
+    end
 
-```
-idf.py -p PORT flash monitor
-```
+    %% Task phụ
+    subgraph AuxTasks [Task phụ]
+        CommTask[Communication Task - Giao tiếp PC/RC]
+        TelemetryTask[Telemetry Task - Gửi dữ liệu về đất]
+        LoggerTask[Logger Task - Ghi log dữ liệu]
+    end
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+    %% Động cơ
+    subgraph Motors [Động cơ & ESC]
+        Motor1[Motor 1]
+        Motor2[Motor 2]
+        Motor3[Motor 3]
+        Motor4[Motor 4]
+    end
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+    %% Queue/Semaphore
+    subgraph IPC [Queue/Semaphore]
+        imuQueue[IMU→Estimator Queue]
+        tofQueue[ToF→Estimator Queue]
+        estimatorQueue[Estimator→PID Queue]
+        pidQueue[PID→Motor Queue]
+        commQueue[Comm→PID Queue]
+        telemetryQueue[Telemetry Buffer]
+        loggerQueue[Logger Buffer]
+        motorSem[Motor Control Semaphore]
+    end
 
-## Example Output
+    %% Luồng dữ liệu cảm biến
+    IMU -->|I2C| IMUTask
+    ToF -->|I2C| ToFTask
 
-Here is the example of ESPNOW receiving device console output.
+    %% IMU Task gửi dữ liệu vào queue cho Angle Estimator
+    IMUTask -->|Dữ liệu IMU| imuQueue
+    ToFTask -->|Dữ liệu ToF| tofQueue
 
-```
-I (898) phy: phy_version: 3960, 5211945, Jul 18 2018, 10:40:07, 0, 0
-I (898) wifi: mode : sta (30:ae:a4:80:45:68)
-I (898) espnow_example: WiFi started
-I (898) ESPNOW: espnow [version: 1.0] init
-I (5908) espnow_example: Start sending broadcast data
-I (6908) espnow_example: send data to ff:ff:ff:ff:ff:ff
-I (7908) espnow_example: send data to ff:ff:ff:ff:ff:ff
-I (52138) espnow_example: send data to ff:ff:ff:ff:ff:ff
-I (52138) espnow_example: Receive 0th broadcast data from: 30:ae:a4:0c:34:ec, len: 200
-I (53158) espnow_example: send data to ff:ff:ff:ff:ff:ff
-I (53158) espnow_example: Receive 1th broadcast data from: 30:ae:a4:0c:34:ec, len: 200
-I (54168) espnow_example: send data to ff:ff:ff:ff:ff:ff
-I (54168) espnow_example: Receive 2th broadcast data from: 30:ae:a4:0c:34:ec, len: 200
-I (54168) espnow_example: Receive 0th unicast data from: 30:ae:a4:0c:34:ec, len: 200
-I (54678) espnow_example: Receive 1th unicast data from: 30:ae:a4:0c:34:ec, len: 200
-I (55668) espnow_example: Receive 2th unicast data from: 30:ae:a4:0c:34:ec, len: 200
-```
+    %% Angle Estimator nhận dữ liệu từ queue, gửi kết quả cho PID
+    imuQueue --> AngleEstimatorTask
+    tofQueue --> AngleEstimatorTask
+    AngleEstimatorTask -->|Attitude/Altitude| estimatorQueue
 
-Here is the example of ESPNOW sending device console output.
+    %% PID Controller nhận setpoint từ Communication, dữ liệu từ Estimator
+    commQueue --> PIDTask
+    estimatorQueue --> PIDTask
 
-```
-I (915) phy: phy_version: 3960, 5211945, Jul 18 2018, 10:40:07, 0, 0
-I (915) wifi: mode : sta (30:ae:a4:0c:34:ec)
-I (915) espnow_example: WiFi started
-I (915) ESPNOW: espnow [version: 1.0] init
-I (5915) espnow_example: Start sending broadcast data
-I (5915) espnow_example: Receive 41th broadcast data from: 30:ae:a4:80:45:68, len: 200
-I (5915) espnow_example: Receive 42th broadcast data from: 30:ae:a4:80:45:68, len: 200
-I (5925) espnow_example: Receive 44th broadcast data from: 30:ae:a4:80:45:68, len: 200
-I (5935) espnow_example: Receive 45th broadcast data from: 30:ae:a4:80:45:68, len: 200
-I (6965) espnow_example: send data to ff:ff:ff:ff:ff:ff
-I (6965) espnow_example: Receive 46th broadcast data from: 30:ae:a4:80:45:68, len: 200
-I (7975) espnow_example: send data to ff:ff:ff:ff:ff:ff
-I (7975) espnow_example: Receive 47th broadcast data from: 30:ae:a4:80:45:68, len: 200
-I (7975) espnow_example: Start sending unicast data
-I (7975) espnow_example: send data to 30:ae:a4:80:45:68
-I (9015) espnow_example: send data to 30:ae:a4:80:45:68
-I (9015) espnow_example: Receive 48th broadcast data from: 30:ae:a4:80:45:68, len: 200
-I (10015) espnow_example: send data to 30:ae:a4:80:45:68
-I (16075) espnow_example: send data to 30:ae:a4:80:45:68
-I (17075) espnow_example: send data to 30:ae:a4:80:45:68
-I (24125) espnow_example: send data to 30:ae:a4:80:45:68
-```
+    %% PID Controller gửi lệnh tới Motor Control
+    PIDTask -->|Motor Command| pidQueue
+    pidQueue -->|PWM/DShot| MotorTask
 
-## Troubleshooting
+    %% Motor Control xuất tín hiệu tới động cơ
+    MotorTask -->|PWM/DShot| Motor1
+    MotorTask -->|PWM/DShot| Motor2
+    MotorTask -->|PWM/DShot| Motor3
+    MotorTask -->|PWM/DShot| Motor4
 
-If ESPNOW data can not be received from another device, maybe the two devices are not
-on the same channel or the primary key and local key are different.
+    %% Semaphore đồng bộ hóa Motor Control
+    MotorTask --> motorSem
 
-In real application, if the receiving device is in station mode only and it connects to an AP,
-modem sleep should be disabled. Otherwise, it may fail to revceive ESPNOW data from other devices.
+    %% Communication Task nhận lệnh từ PC/RC, gửi setpoint cho PID
+    CommTask -->|Lệnh điều khiển| commQueue
+
+    %% Telemetry Task nhận dữ liệu từ các task, gửi về đất
+    AngleEstimatorTask --> telemetryQueue
+    PIDTask --> telemetryQueue
+    MotorTask --> telemetryQueue
+    TelemetryTask -->|CRTP/Radio/BLE| CommTask
+
+    %% Logger Task ghi log dữ liệu từ các task
+    AngleEstimatorTask --> loggerQueue
+    PIDTask --> loggerQueue
+    MotorTask --> loggerQueue
+    LoggerTask -->|Lưu trữ/Truyền về đất| CommTask
+    PIDTask --> loggerQueue
+    MotorTask --> loggerQueue
+    LoggerTask -->|Lưu trữ/Truyền về đất| CommTask
