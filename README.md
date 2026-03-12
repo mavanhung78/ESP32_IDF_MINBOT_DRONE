@@ -1,6 +1,33 @@
 | Supported Targets | ESP32-S3 |
 | ----------------- | -------- |
 
+
+| Device                          | Interface | ESP32-S3 Pin | Sensor Pin  | Notes                         |
+| ------------------------------- | --------- | ------------ | ----------- | ----------------------------- |
+| **VL53L1X ToF Distance Sensor** | I2C       | GPIO8        | SDA         | Shared I2C bus                |
+|                                 | I2C       | GPIO9        | SCL         | Shared I2C bus                |
+|                                 | GPIO      | GPIO7        | XSHUT       | Optional reset control        |
+|                                 | Power     | 3V3          | VIN         | 3.3V supply                   |
+|                                 | GND       | GND          | GND         | Common ground                 |
+| **MPU6050 IMU**                 | I2C       | GPIO8        | SDA         | Shared with VL53L1X           |
+|                                 | I2C       | GPIO9        | SCL         | Shared with VL53L1X           |
+|                                 | Power     | 3V3          | VCC         | 3.3V supply                   |
+|                                 | GND       | GND          | GND         | Common ground                 |
+| **PMW3901 Optical Flow Sensor** | SPI       | GPIO12       | MOSI        | SPI bus                       |
+|                                 | SPI       | GPIO13       | MISO        | SPI bus                       |
+|                                 | SPI       | GPIO11       | SCLK        | SPI clock                     |
+|                                 | SPI       | GPIO10       | CS          | Chip select                   |
+|                                 | GPIO      | GPIO14       | INT         | Motion interrupt (optional)   |
+|                                 | Power     | 3V3          | VCC         | 3.3V supply                   |
+|                                 | GND       | GND          | GND         | Common ground                 |
+| **SBUS Receiver**               | UART RX   | GPIO17       | SBUS Signal | Use UART with inverted signal |
+|                                 | Power     | 5V / 3V3     | VCC         | Depends on receiver           |
+|                                 | GND       | GND          | GND         | Common ground                 |
+| **WS2812B RGB LED**             | GPIO      | GPIO18       | DIN         | Data signal                   |
+|                                 | Power     | 5V           | VCC         | LED supply                    |
+|                                 | GND       | GND          | GND         | Common ground                 |
+
+
 # Sensor Data Flow
 ```mermaid
 flowchart LR
