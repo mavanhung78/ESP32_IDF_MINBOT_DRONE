@@ -1,34 +1,59 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-S3 |
+| ----------------- | -------- |
 
-# ESPNOW Example
+# Sensor Data Flow
+```mermaid
+flowchart LR
 
-Ví dụ này minh họa cách sử dụng ESP-NOW qua WiFi. Ví dụ thực hiện các bước sau:
+IMU --> Filter
+Filter --> Attitude
 
-- Khởi động WiFi.
+Attitude --> PID
 
-- Khởi tạo ESP-NOW.
+PID --> MotorMixer
 
-- Đăng ký hàm callback cho việc gửi hoặc nhận dữ liệu ESP-NOW.
+MotorMixer --> Motors
+```
+# FreeRTOS task architecture
 
-- Thêm thông tin peer (thiết bị kết nối) của ESP-NOW.
+```mermaid
+flowchart TD
 
-- Gửi và nhận dữ liệu ESP-NOW.
+A[Main] --> B[System Init]
 
-Ví dụ này cần ít nhất hai thiết bị ESP.
+B --> C[Sensor Task]
+B --> D[Estimator Task]
+B --> E[Controller Task]
+B --> F[Commander Task]
+B --> G[Motor Task]
 
-* Để lấy địa chỉ MAC của thiết bị còn lại, Device1 trước tiên sẽ gửi dữ liệu ESP-NOW dạng broadcast với trường state được đặt bằng 0.
+C --> D
+D --> E
+E --> G
+F --> E
+```
+# System Architecture
 
-* Khi Device2 nhận được dữ liệu broadcast ESP-NOW từ Device1 với state = 0, nó sẽ thêm Device1 vào danh sách peer.
-Sau đó Device2 bắt đầu gửi dữ liệu broadcast ESP-NOW với state được đặt bằng 1.
+```mermaid
+flowchart TD
 
-* Khi Device1 nhận được dữ liệu broadcast ESP-NOW với state = 1, nó sẽ so sánh magic number của chính nó với magic number trong dữ liệu nhận được.
-Nếu magic number của Device1 lớn hơn, Device1 sẽ dừng gửi broadcast ESP-NOW và bắt đầu gửi dữ liệu unicast ESP-NOW trực tiếp tới Device2.
+A[IMU Sensor MPU9250] --> B[Sensor Task]
+C[Barometer] --> B
+D[Flow Deck] --> B
 
-* Nếu Device2 nhận được dữ liệu unicast ESP-NOW, nó cũng sẽ dừng gửi broadcast ESP-NOW.
+B --> E[State Estimator]
+E --> F[Position / Attitude]
 
-## How to use example
+F --> G[Controller PID]
 
+G --> H[Motor Mixer]
+
+H --> I[ESC Driver]
+I --> J[Motors]
+
+K[Radio / USB] --> L[Commander]
+L --> G
+```
 ### Configure the project
 
 ```
