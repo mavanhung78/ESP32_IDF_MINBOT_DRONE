@@ -32,7 +32,7 @@
 ```mermaid
 flowchart TD
 
-Commander[Commander] -->|Setpoint| StateController[State Controller]
+Commander[High Level Commander] -->|Setpoint| StateController[State Controller]
 
 Sensors[Sensors] -->|Sensor data| StateEstimator[State Estimator]
 StateEstimator -->|State| StateController
