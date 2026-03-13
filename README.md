@@ -28,7 +28,7 @@
 |                                 | GND       | GND          | GND         | Common ground                 |
 
 
-# Sensor Data Flow
+# Overview
 ```mermaid
 flowchart TD
 
