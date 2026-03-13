@@ -30,16 +30,24 @@
 
 # Sensor Data Flow
 ```mermaid
-flowchart LR
+flowchart TD
 
-IMU --> Filter
-Filter --> Attitude
+Commander[Commander] -->|Setpoint| StateController[State Controller]
 
-Attitude --> PID
+Sensors[Sensors] -->|Sensor data| StateEstimator[State Estimator]
+StateEstimator -->|State| StateController
 
-PID --> MotorMixer
+StateController -->|cmds| PowerDistribution[Power distribution]
+PowerDistribution -->|PWM| Motors[Motors]
 
-MotorMixer --> Motors
+Motors -.-> Sensors
+
+style Sensors stroke:#1E90FF,stroke-width:2px
+style StateEstimator stroke:#1E90FF,stroke-width:2px
+style StateController stroke:#1E90FF,stroke-width:2px
+style PowerDistribution stroke:#1E90FF,stroke-width:2px
+style Motors stroke:#1E90FF,stroke-width:2px
+style Commander stroke:#1E90FF,stroke-width:2px
 ```
 # FreeRTOS task architecture
 
