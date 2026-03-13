@@ -70,24 +70,37 @@ F --> E
 # System Architecture
 
 ```mermaid
-flowchart TD
+flowchart LR
 
-A[IMU Sensor MPU9250] --> B[Sensor Task]
-C[Barometer] --> B
-D[Flow Deck] --> B
 
-B --> E[State Estimator]
-E --> F[Position / Attitude]
+A[Aapp_main] --> C[platformInit]
+C --> C1[i2cdev_init]
+C --> C2[mpu6050_init_desc]
+C --> C3[i2c_dev_probe]
+C --> C4[mpu6050_init]
+C --> C5[vl53l1x_init]
+C -->  B[led_init]
 
-F --> G[Controller PID]
+A --> |systemTask| D[system_launch]
 
-G --> H[Motor Mixer]
+D --> E[xTaskCreate_mpu6050_task]
+D --> K[xTaskCreate_vl53l1x_task]
 
-H --> I[ESC Driver]
-I --> J[Motors]
+D --> 3[stabilizerInit_StateEstimatorType]
+D --> 1[systemStart]
+D --> 2[Test]
+E --> F[calibrate_mpu6050]
+F --> G[imu_loop]
+G --> H[read_accel_gyro]
+H --> I[calculate_roll_pitch]
+I --> J[ESP_LOGI]
+J --> G
 
-K[Radio / USB] --> L[Commander]
-L --> G
+K --> L[tof_loop]
+L --> M[read_distance]
+M --> N[distance_log]
+N --> L
+
 ```
 ### Configure the project
 
